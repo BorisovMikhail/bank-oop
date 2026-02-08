@@ -22,9 +22,17 @@ class Account:
         return self.balance
 
 
+@dataclass
+class Transaction:
+    from_id: int
+    to_id: int
+    amount: float
+
+
 class Bank:
     def __init__(self) -> None:
         self._accounts: dict[int, Account] = {}
+        self._transactions: list[Transaction] = []
 
     def open_account(self, account_id: int, owner: str, initial_balance: float = 0.0) -> Account:
         if account_id in self._accounts:
@@ -42,3 +50,21 @@ class Bank:
         except KeyError as exc:
             raise KeyError(f"Account {account_id} not found") from exc
 
+    def transfer(self, from_id: int, to_id: int, amount: float) -> Transaction:
+        if from_id == to_id:
+            raise ValueError("Cannot transfer to the same account")
+        if amount <= 0:
+            raise ValueError("Transfer amount must be positive")
+
+        from_account = self.get_account(from_id)
+        to_account = self.get_account(to_id)
+
+        from_account.withdraw(amount)
+        to_account.deposit(amount)
+
+        transaction = Transaction(from_id=from_id, to_id=to_id, amount=amount)
+        self._transactions.append(transaction)
+        return transaction
+
+    def get_transactions(self) -> list[Transaction]:
+        return self._transactions.copy()
