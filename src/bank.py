@@ -5,15 +5,15 @@ from dataclasses import dataclass
 class Account:
     id: int
     owner: str
-    balance: float = 0.0
+    balance: int = 0
 
-    def deposit(self, amount: float) -> float:
+    def deposit(self, amount: int) -> int:
         if amount <= 0:
             raise ValueError("Deposit amount must be positive")
         self.balance += amount
         return self.balance
 
-    def withdraw(self, amount: float) -> float:
+    def withdraw(self, amount: int) -> int:
         if amount <= 0:
             raise ValueError("Withdraw amount must be positive")
         if amount > self.balance:
@@ -26,7 +26,7 @@ class Account:
 class Transaction:
     from_id: int
     to_id: int
-    amount: float
+    amount: int
 
 
 class Bank:
@@ -34,7 +34,7 @@ class Bank:
         self._accounts: dict[int, Account] = {}
         self._transactions: list[Transaction] = []
 
-    def open_account(self, account_id: int, owner: str, initial_balance: float = 0.0) -> Account:
+    def open_account(self, account_id: int, owner: str, initial_balance: int = 0) -> Account:
         if account_id in self._accounts:
             raise ValueError(f"Account {account_id} already exists")
         if initial_balance < 0:
@@ -50,7 +50,7 @@ class Bank:
         except KeyError as exc:
             raise KeyError(f"Account {account_id} not found") from exc
 
-    def transfer(self, from_id: int, to_id: int, amount: float) -> Transaction:
+    def transfer(self, from_id: int, to_id: int, amount: int) -> Transaction:
         if from_id == to_id:
             raise ValueError("Cannot transfer to the same account")
         if amount <= 0:
