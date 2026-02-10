@@ -1,5 +1,6 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
+from datetime import datetime, timezone
 
 MoneyInput = int | float | str | Decimal
 
@@ -55,6 +56,7 @@ class Transaction:
     from_id: int
     to_id: int
     amount: int
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class Bank:
@@ -100,3 +102,11 @@ class Bank:
 
     def get_transactions(self) -> list[Transaction]:
         return self._transactions.copy()
+
+    def get_account_history(self, account_id: int) -> list[Transaction]:
+        self.get_account(account_id)
+        return [
+            transaction
+            for transaction in self._transactions
+            if transaction.from_id == account_id or transaction.to_id == account_id
+        ]
