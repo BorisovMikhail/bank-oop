@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 import pytest
 
 from src.bank import Account, Bank, Transaction
@@ -83,12 +85,16 @@ def test_bank_transfer_moves_money_and_stores_transaction() -> None:
     bank.open_account(account_id=1, owner="Alice", initial_balance=100.00)
     bank.open_account(account_id=2, owner="Bob", initial_balance=20.00)
 
+    before_transfer = datetime.now(timezone.utc)
     transaction = bank.transfer(from_id=1, to_id=2, amount=30.00)
+    after_transfer = datetime.now(timezone.utc)
 
     assert isinstance(transaction, Transaction)
     assert transaction.from_id == 1
     assert transaction.to_id == 2
     assert transaction.amount == 3_000
+    assert transaction.timestamp.tzinfo is not None
+    assert before_transfer <= transaction.timestamp <= after_transfer
     assert bank.get_account(1).balance == 7_000
     assert bank.get_account(2).balance == 5_000
     assert bank.get_transactions() == [transaction]
@@ -141,3 +147,27 @@ def test_bank_transfer_to_same_account_raises() -> None:
 
     with pytest.raises(ValueError, match="same account"):
         bank.transfer(from_id=1, to_id=1, amount=10.00)
+
+
+def test_bank_get_account_history_returns_only_related_transactions() -> None:
+    bank = Bank()
+    bank.open_account(account_id=1, owner="Alice", initial_balance=100.00)
+    bank.open_account(account_id=2, owner="Bob", initial_balance=50.00)
+    bank.open_account(account_id=3, owner="Charlie", initial_balance=40.00)
+
+    tx_1 = bank.transfer(from_id=1, to_id=2, amount=10.00)
+    tx_2 = bank.transfer(from_id=2, to_id=1, amount=5.00)
+    tx_3 = bank.transfer(from_id=2, to_id=3, amount=7.00)
+
+    history_for_1 = bank.get_account_history(1)
+    history_for_3 = bank.get_account_history(3)
+
+    assert history_for_1 == [tx_1, tx_2]
+    assert history_for_3 == [tx_3]
+
+
+def test_bank_get_account_history_unknown_account_raises() -> None:
+    bank = Bank()
+
+    with pytest.raises(KeyError, match="not found"):
+        bank.get_account_history(404)
