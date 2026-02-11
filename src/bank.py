@@ -11,10 +11,13 @@ def _to_cents(amount: MoneyInput, *, field_name: str) -> int:
     if isinstance(amount, bool):
         raise TypeError(f"{field_name} must be a valid number")
 
-    try:
-        decimal_amount = Decimal(str(amount))
-    except (InvalidOperation, ValueError) as exc:
-        raise TypeError(f"{field_name} must be a valid number") from exc
+    if isinstance(amount, Decimal):
+        decimal_amount = amount
+    else:
+        try:
+            decimal_amount = Decimal(str(amount))
+        except InvalidOperation as exc:
+            raise TypeError(f"{field_name} must be a valid number") from exc
 
     if not decimal_amount.is_finite():
         raise ValueError(f"{field_name} must be a finite number")
