@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 
 from src.bank import Bank
 
@@ -17,6 +18,10 @@ def test_bank_save_and_load_retains_data(tmp_path):
     
     # 2. Сохраняем данные в файл
     bank.save_to_file(json_file)
+
+    with open(json_file, "r", encoding="utf-8") as file:
+        raw_data = json.load(file)
+    assert "id" not in raw_data["accounts"]["1"]
     
     # 3. Создаем НОВЫЙ банк и загружаем данные
     new_bank = Bank()

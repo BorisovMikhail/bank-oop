@@ -117,7 +117,6 @@ class Bank:
         data = {
             "accounts": {
                 str(account_id): {
-                    "id": account.id,
                     "owner": account.owner,
                     "balance": account.balance,
                 }
@@ -148,7 +147,7 @@ class Bank:
             for account_key, account_data in data.get("accounts", {}).items():
                 account_id = int(account_key)
                 accounts[account_id] = Account(
-                    id=int(account_data.get("id", account_id)),
+                    id=account_id,
                     owner=account_data["owner"],
                     balance=int(account_data["balance"]),
                 )
