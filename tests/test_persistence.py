@@ -1,5 +1,7 @@
-import pytest
+from datetime import datetime
+
 from src.bank import Bank
+
 
 def test_bank_save_and_load_retains_data(tmp_path):
     # 1. Подготовка: создаем банк с данными
@@ -39,5 +41,4 @@ def test_bank_save_and_load_retains_data(tmp_path):
     assert tx.amount == 2500
     
     # Самое важное: проверка, что timestamp вернулся как объект, а не строка
-    from datetime import datetime
     assert isinstance(tx.timestamp, datetime)
