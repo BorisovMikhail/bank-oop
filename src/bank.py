@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 from decimal import Decimal, InvalidOperation
 from datetime import datetime, timezone
+import json
+from pathlib import Path
 
 MoneyInput = int | float | str | Decimal
 
@@ -110,3 +112,58 @@ class Bank:
             for transaction in self._transactions
             if transaction.from_id == account_id or transaction.to_id == account_id
         ]
+
+    def save_to_file(self, filename: str | Path) -> None:
+        data = {
+            "accounts": {
+                str(account_id): {
+                    "owner": account.owner,
+                    "balance": account.balance,
+                }
+                for account_id, account in self._accounts.items()
+            },
+            "transactions": [
+                {
+                    "from_id": transaction.from_id,
+                    "to_id": transaction.to_id,
+                    "amount": transaction.amount,
+                    "timestamp": transaction.timestamp.isoformat(),
+                }
+                for transaction in self._transactions
+            ],
+        }
+
+        file_path = Path(filename)
+        with file_path.open("w", encoding="utf-8") as file:
+            json.dump(data, file, ensure_ascii=False, indent=2)
+
+    def load_from_file(self, filename: str | Path) -> None:
+        file_path = Path(filename)
+        try:
+            with file_path.open("r", encoding="utf-8") as file:
+                data = json.load(file)
+
+            accounts: dict[int, Account] = {}
+            for account_key, account_data in data.get("accounts", {}).items():
+                account_id = int(account_key)
+                accounts[account_id] = Account(
+                    id=account_id,
+                    owner=account_data["owner"],
+                    balance=int(account_data["balance"]),
+                )
+
+            transactions: list[Transaction] = []
+            for transaction_data in data.get("transactions", []):
+                transactions.append(
+                    Transaction(
+                        from_id=int(transaction_data["from_id"]),
+                        to_id=int(transaction_data["to_id"]),
+                        amount=int(transaction_data["amount"]),
+                        timestamp=datetime.fromisoformat(transaction_data["timestamp"]),
+                    )
+                )
+        except (json.JSONDecodeError, KeyError, ValueError, TypeError) as exc:
+            raise IOError(f"Error loading data from {file_path}: invalid file format.") from exc
+
+        self._accounts = accounts
+        self._transactions = transactions
