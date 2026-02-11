@@ -140,28 +140,31 @@ class Bank:
 
     def load_from_file(self, filename: str | Path) -> None:
         file_path = Path(filename)
-        with file_path.open("r", encoding="utf-8") as file:
-            data = json.load(file)
+        try:
+            with file_path.open("r", encoding="utf-8") as file:
+                data = json.load(file)
 
-        accounts: dict[int, Account] = {}
-        for account_key, account_data in data.get("accounts", {}).items():
-            account_id = int(account_key)
-            accounts[account_id] = Account(
-                id=int(account_data.get("id", account_id)),
-                owner=account_data["owner"],
-                balance=int(account_data["balance"]),
-            )
-
-        transactions: list[Transaction] = []
-        for transaction_data in data.get("transactions", []):
-            transactions.append(
-                Transaction(
-                    from_id=int(transaction_data["from_id"]),
-                    to_id=int(transaction_data["to_id"]),
-                    amount=int(transaction_data["amount"]),
-                    timestamp=datetime.fromisoformat(transaction_data["timestamp"]),
+            accounts: dict[int, Account] = {}
+            for account_key, account_data in data.get("accounts", {}).items():
+                account_id = int(account_key)
+                accounts[account_id] = Account(
+                    id=int(account_data.get("id", account_id)),
+                    owner=account_data["owner"],
+                    balance=int(account_data["balance"]),
                 )
-            )
+
+            transactions: list[Transaction] = []
+            for transaction_data in data.get("transactions", []):
+                transactions.append(
+                    Transaction(
+                        from_id=int(transaction_data["from_id"]),
+                        to_id=int(transaction_data["to_id"]),
+                        amount=int(transaction_data["amount"]),
+                        timestamp=datetime.fromisoformat(transaction_data["timestamp"]),
+                    )
+                )
+        except (json.JSONDecodeError, KeyError, ValueError, TypeError) as exc:
+            raise IOError(f"Error loading data from {file_path}: invalid file format.") from exc
 
         self._accounts = accounts
         self._transactions = transactions
